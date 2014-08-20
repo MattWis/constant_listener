@@ -1,0 +1,23 @@
+Constant Listener
+
+This repository was created as a utility for a home automation system. It listens in the background, and uses Google's Speech-to-Text API to give the text said through a Queue.
+
+The general usage has it listening for overlapping chunks, so if you read the beginning of this README into the program, the Queue would have in it:
+["Constant Listener", "Listener This repository was created", "story was created as a Ute", ...]
+
+
+Initilization:
+
+Put a valid Google Developer Key in the key.py file.
+
+Follow "Step 1" here: http://progfruits.wordpress.com/2014/05/31/using-google-speech-api-from-python/
+(Also, concerns raised in the article are valid.)
+
+
+Usage:
+
+To start a listener that triggers every one second and records for 4 seconds:
+
+q = Queue.Queue()
+background_speech_to_text(q, 4, 1)
+
