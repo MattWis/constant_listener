@@ -9,7 +9,7 @@ from scikits.samplerate import resample
 from scikits.audiolab import Sndfile, Format, wavread
  
 def listen_for_best_google_speech_result(pyaudio, duration):
-    return extract_best_result(flac_to_result(wav_to_flac(record_wav(p, 4))))
+    return best_result(flac_to_result(wav_to_flac(record_wav(pyaudio, 4))))
 
 
 def record_wav(p, duration):
@@ -61,7 +61,7 @@ def flac_to_result(flac_name):
 
     return result.read()
  
-def extract_best_result(result):
+def best_result(result):
     lines = result.splitlines()
     if "transcript" in lines[0] or len(lines[0]) > 15:
         print "\nFirst line has info:\n" + lines[0], '\n'
@@ -70,7 +70,6 @@ def extract_best_result(result):
             best = json.loads(lines[1])['result'][0]['alternative'][0]['transcript']
             return best
         except:
-            print lines
             return ""
 
 if __name__ == "__main__":
