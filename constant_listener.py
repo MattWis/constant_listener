@@ -5,15 +5,15 @@ from time import sleep
 import Queue
 
 def background_speech_to_text(queue, duration, interval):
-    start_new_thread(spawn_listeners, (queue, duration, interval, ))
+    start_new_thread(_spawn_listeners, (queue, duration, interval, ))
 
-def spawn_listeners(queue, duration, interval):
+def _spawn_listeners(queue, duration, interval):
     p = PyAudio()
     while True:
-        start_new_thread(listen, (p, queue, duration, ))
+        start_new_thread(_listen, (p, queue, duration, ))
         sleep(interval)
 
-def listen(pyaudio, queue, duration):
+def _listen(pyaudio, queue, duration):
     queue.put(listen_for_best_google_speech_result(pyaudio, duration))
 
 if __name__ == "__main__":
@@ -22,6 +22,4 @@ if __name__ == "__main__":
 
     while True:
         print q.get()
-    
-
 
