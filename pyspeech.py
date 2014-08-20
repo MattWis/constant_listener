@@ -7,6 +7,8 @@ from tempfile import mkstemp
 import urllib2
 from scikits.samplerate import resample
 from scikits.audiolab import Sndfile, Format, wavread
+
+from key import key
  
 def listen_for_best_google_speech_result(pyaudio, duration):
   return best_result(flac_to_result(wav_to_flac(record_wav(pyaudio, 4))))
@@ -50,7 +52,9 @@ def wav_to_flac(wav_name):
 def flac_to_result(flac_name):
   flac_file = open(flac_name, 'rb')
 
-  url = "https://www.google.com/speech-api/v2/recognize?output=json&lang=en-us&key=AIzaSyD6Cba8xQZUMnw_FUEaeJOTOz-kBMIf6l4"
+  url = "https://www.google.com/speech-api/v2/recognize"
+  url += "?output=json&lang=en-us&key=" + key
+
   header = {'Content-Type' : 'audio/x-flac; rate=16000'}
   req = urllib2.Request(url, data = flac_file.read(), headers = header)
   result = urllib2.urlopen(req)
