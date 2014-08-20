@@ -38,7 +38,6 @@ def wav_to_flac(wav_name):
     Signal, fs = wavread(wav_name)[:2]
     Signal = resample(Signal, rate / float(fs), 'sinc_best')
      
-    # Create the flac file
     fmt = Format('flac', 'pcm16')
     nchannels = 1
     flac_file = Sndfile(tmp_name, 'w', fmt, nchannels, rate)
@@ -75,3 +74,4 @@ def best_result(result):
 if __name__ == "__main__":
     p = pyaudio.PyAudio()
     print listen_for_best_google_speech_result(p, 4)
+
