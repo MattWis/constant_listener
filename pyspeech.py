@@ -65,14 +65,14 @@ def flac_to_result(flac_name):
   return result.read()
  
 def best_result(result):
-  lines = result.splitlines()
-  if "transcript" in lines[0] or len(lines[0]) > 15:
-    print "\nFirst line has info:\n" + lines[0], '\n'
-  else:
-    try:
+  try:
+    lines = result.splitlines()
+    if "transcript" in lines[0] or len(lines[0]) > 15:
+      print "\nFirst line has info:\n" + lines[0], '\n'
+    else:
       return json.loads(lines[1])['result'][0]['alternative'][0]['transcript']
-    except:
-      return ""
+  except:
+    return ""
 
 if __name__ == "__main__":
   p = pyaudio.PyAudio()
