@@ -9,7 +9,9 @@ from scikits.samplerate import resample
 from scikits.audiolab import Sndfile, Format, wavread
 
 from key import key
- 
+if key == '':
+    raise "Put your Google Developer Key in key.py"
+
 def listen_for_best_google_speech_result(pyaudio, duration):
   return best_result(flac_to_result(wav_to_flac(record_wav(pyaudio, 4))))
 
