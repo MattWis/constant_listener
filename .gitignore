@@ -1,1 +1,4 @@
 *.pyc
+sentences.txt
+language_model.lm
+dictionary.dic
