@@ -10,14 +10,18 @@ Initilization:
 
 Put a valid Google Developer Key in the key.py file.
 
+You will need to pass in a profile that is a dictionary. If you are using the google STT service, it needs to have 'key' mapped to a valid Google Developer's key.
+
 Follow "Step 1" here: http://progfruits.wordpress.com/2014/05/31/using-google-speech-api-from-python/
 (Also, concerns raised in the article are valid.)
 
+If you are using sphinx, you need profile to have "words" mapped to a list of possible outputs.
 
 Usage:
 
-To start a listener that triggers every one second and records for 4 seconds:
+To start a listener that triggers every one second and records for 4 seconds (using google STT):
 
+profile = { "key": "My_key_here" }
 q = Queue.Queue()
-background_speech_to_text(q, 4, 1)
+background_speech_to_text(q, 4, 1, profile, "google")
 
