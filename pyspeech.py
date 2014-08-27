@@ -69,12 +69,12 @@ def record_wav(p, duration):
 
 def wav_to_flac(wav_name):
   cd, tmp_name = mkstemp('tmp.flac')
-   
+
   #Resampling to 16000fs
   rate = 16000.
   Signal, fs = wavread(wav_name)[:2]
   Signal = resample(Signal, rate / float(fs), 'sinc_best')
-   
+
   fmt = Format('flac', 'pcm16')
   nchannels = 1
   flac_file = Sndfile(tmp_name, 'w', fmt, nchannels, rate)
