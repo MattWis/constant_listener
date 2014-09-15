@@ -9,6 +9,7 @@ from scikits.samplerate import resample
 from scikits.audiolab import Sndfile, Format, wavread
 from pocketsphinx import Decoder
 from vocabcompiler import compile
+from wit import Wit
 
 
 have_sphinx_dictionary = False
@@ -16,6 +17,8 @@ have_sphinx_dictionary = False
 def listen_for_best_speech_result(pyaudio, duration, profile, stt_type = "google"):
   if stt_type == 'google':
     return listen_for_best_google_speech_result(pyaudio, duration, profile)
+  elif stt_type == 'wit':
+    return listen_for_best_wit_speech_result(pyaudio, duration, profile)
   elif stt_type == 'sphinx':
     return listen_for_best_sphinx_speech_result(pyaudio, duration, profile)
 
@@ -48,6 +51,14 @@ def listen_for_best_google_speech_result(pyaudio, duration, profile):
   flac_file = wav_to_flac(record_wav(pyaudio, duration))
   return best_google_result(flac_to_google_result(flac_file, profile["key"]))
 
+def listen_for_best_wit_speech_result(pyaudio, duration, profile):
+  if not profile.has_key("wit_token") or profile["wit_token"] == '':
+    raise "Pass your Wit API Token in profile"
+  wav_name = record_wav(pyaudio, duration)
+  w = Wit(profile["wit_token"])
+  result = w.post_speech(open(wav_name, 'rb'))
+  os.remove(wav_name)
+  return result[u'msg_body']
 
 def record_wav(p, duration):
   rate = 44100
@@ -113,5 +124,5 @@ if __name__ == "__main__":
   import yaml
   profile = yaml.load(open("profile.yml", 'rb').read())
   p = pyaudio.PyAudio()
-  print(listen_for_best_google_speech_result(p, 4, profile))
+  print(listen_for_best_wit_speech_result(p, 4, profile))
 
