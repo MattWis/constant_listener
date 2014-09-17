@@ -3,6 +3,7 @@ import os
 import sys
 import wave
 import pyaudio
+import struct
 from tempfile import mkstemp
 import urllib2
 from scikits.samplerate import resample
@@ -31,6 +32,8 @@ def listen_for_best_sphinx_speech_result(pyaudio, duration, profile):
     have_sphinx_dictionary = True
 
   wav_name = record_wav(pyaudio, duration)
+  if wav_name == "":
+    return ""
   wav_file = file(wav_name, 'rb')
   speechRec = Decoder(
     hmm  = "/usr/local/share/pocketsphinx/model/hmm/en_US/hub4wsj_sc_8k",
@@ -49,12 +52,16 @@ def listen_for_best_google_speech_result(pyaudio, duration, profile):
   if not profile.has_key("key") or profile["key"] == '':
     raise "Pass your Google Developer Key in profile"
   flac_file = wav_to_flac(record_wav(pyaudio, duration))
+  if flac_file == "":
+    return ""
   return best_google_result(flac_to_google_result(flac_file, profile["key"]))
 
 def listen_for_best_wit_speech_result(pyaudio, duration, profile):
   if not profile.has_key("wit_token") or profile["wit_token"] == '':
     raise "Pass your Wit API Token in profile"
   wav_name = record_wav(pyaudio, duration)
+  if wav_name == "":
+    return ""
   w = Wit(profile["wit_token"])
   result = w.post_speech(open(wav_name, 'rb'))
   os.remove(wav_name)
@@ -69,6 +76,17 @@ def record_wav(p, duration):
   stream.stop_stream()
   stream.close()
 
+  # 2 bytes per paInt16
+  format = "%dh"%(len(data)/2)
+  levels = struct.unpack(format, data)
+
+  sum_squares = 0
+  for level in levels:
+      sum_squares += level * level
+
+  if sum_squares / (rate * duration) < 4000000:
+    return ""
+
   wav_file = wave.open(wav_name, 'wb')
   wav_file.setnchannels(1)
   wav_file.setsampwidth(p.get_sample_size(pyaudio.paInt16))
@@ -79,6 +97,9 @@ def record_wav(p, duration):
   return wav_name
 
 def wav_to_flac(wav_name):
+  if wav_name == "":
+    return ""
+
   cd, tmp_name = mkstemp('tmp.flac')
 
   #Resampling to 16000fs
@@ -96,6 +117,9 @@ def wav_to_flac(wav_name):
   return tmp_name
 
 def flac_to_google_result(flac_name, key):
+  if flac_name == "":
+    return ""
+
   flac_file = open(flac_name, 'rb')
 
   url = "https://www.google.com/speech-api/v2/recognize"
@@ -111,6 +135,8 @@ def flac_to_google_result(flac_name, key):
   return result.read()
 
 def best_google_result(result):
+  if result == "":
+    return ""
   try:
     lines = result.splitlines()
     if "transcript" in lines[0] or len(lines[0]) > 15:

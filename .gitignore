@@ -2,3 +2,6 @@
 sentences.txt
 language_model.lm
 dictionary.dic
+build/
+*egg-info*
+dist/
