@@ -67,7 +67,7 @@ def best_wit_speech_result(pyaudio, wav_name, profile):
 def put_audio_data_in_queue(p, queue):
   CHUNK = 4096
 
-  loud = False
+  was_loud = False
   current_data = ""
 
   stream = p.open(input_device_index = None, rate = RATE, channels = 1,
@@ -85,12 +85,13 @@ def put_audio_data_in_queue(p, queue):
 
     if (sum_squares / CHUNK > 1000000):
       current_data = current_data + data
-      loud = True
+      was_loud = True
     else:
-      if (loud):
-        queue.put(current_data)
+      if (was_loud):
+        if (len(current_data) / RATE > 1):
+          queue.put(current_data)
         current_data = ""
-      loud = False
+      was_loud = False
 
   stream.stop_stream()
   stream.close()
