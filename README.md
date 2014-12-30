@@ -22,15 +22,14 @@ If there is no key specified, a default key will be used, which was gotten from 
 If you are using sphinx, you need profile to have "words" mapped to a list of possible outputs.
 
   Wit.ai:
-Map 'wit_token' to a valid wit.ai token. (I use a server token, it will *probably* work with a client token.)
+Map 'wit_token' to a valid wit.ai token. (I use a server token, it might work with a client token.)
+
+It's worth noting that the way this currently uses [pywit](https://github.com/lextoumbourou/PyWit) is deprecated in favor of the [official API](https://github.com/wit-ai/pywit), which doesn't have the same structure.
 
 Usage:
-
-To start a listener that triggers every one second and records for 4 seconds (using google STT and default key):
-
 ```
 q = Queue.Queue()
-background_speech_to_text(q, 4, 1, {}, "google")
+background_speech_to_text(q, {}, "google")
 while True:
   print q.get()
 ```
