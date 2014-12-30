@@ -85,7 +85,6 @@ def put_audio_data_in_queue(p, queue):
 
     if (sum_squares / CHUNK > 1000000):
       current_data = current_data + data
-      print("Loud: " + str((len(current_data) + 0.0) / (2 * RATE)))
       quiet_time = 0
     else:
       if (quiet_time > 0.5):               #0.5 second maximum of quietness
@@ -93,7 +92,6 @@ def put_audio_data_in_queue(p, queue):
           queue.put(current_data)
         current_data = ""
       quiet_time += (CHUNK + 0.0) / RATE
-      print("Quiet: " + str(quiet_time))
 
   stream.stop_stream()
   stream.close()
