@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(name='constant_listener',
-      version='0.0.2',
+      version='0.0.3',
       author='Matt Wismer',
       author_email='mattwis86@gmail.com',
       description='STT engine that listens in the background',
@@ -10,4 +10,4 @@ setup(name='constant_listener',
       packages=['constant_listener'],
       package_dir={'constant_listener': 'constant_listener'},
       url='https://github.com/MattWis/constant_listener.git',
-      install_requires=['pywit', 'scikits.audiolab', 'scikits.samplerate', 'pocketsphinx', 'pyaudio'])
+      install_requires=['scikits.audiolab', 'scikits.samplerate', 'pyaudio'])
