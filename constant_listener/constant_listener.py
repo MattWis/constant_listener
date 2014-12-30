@@ -1,26 +1,29 @@
 from thread import start_new_thread
 from pyaudio import PyAudio
-from pyspeech import listen_for_best_speech_result
+from pyspeech import best_speech_result, put_audio_data_in_queue
 from time import sleep
 import Queue
 
-def background_stt(queue, duration, interval, profile, stt_type = 'google'):
-  start_new_thread(_spawn_listeners, (queue, duration, interval, profile, stt_type, ))
+def background_stt(queue, profile, stt_type = 'google'):
+  start_new_thread(_spawn_listeners, (queue, profile, stt_type,))
 
-def _spawn_listeners(queue, duration, interval, profile, stt_type):
+def _spawn_listeners(queue, profile, stt_type):
   p = PyAudio()
+  audio_data_queue = Queue.Queue()
+  start_new_thread(put_audio_data_in_queue, (p, audio_data_queue,))
   while True:
-    start_new_thread(_listen, (p, queue, duration, profile, stt_type, ))
-    sleep(interval)
+    _listen(p, queue, audio_data_queue, profile, stt_type)
 
-def _listen(pyaudio, queue, duration, profile, stt_type):
-  queue.put(listen_for_best_speech_result(pyaudio, duration, profile, stt_type))
+def _listen(pyaudio, queue_out, queue_in, profile, stt_type):
+  output = best_speech_result(pyaudio, queue_in.get(), profile, stt_type)
+  if output != "":
+    queue_out.put(output)
 
 if __name__ == "__main__":
   import yaml
   profile = yaml.load(open("profile.yml").read())
   q = Queue.Queue()
-  background_stt(q, 4, 2, profile, "google")
+  background_stt(q, profile, 'google')
 
   while True:
     print(q.get())

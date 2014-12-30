@@ -3,6 +3,7 @@ import os
 import sys
 import wave
 import pyaudio
+import Queue
 import struct
 from tempfile import mkstemp
 import urllib2
@@ -14,16 +15,24 @@ from wit import Wit
 
 
 have_sphinx_dictionary = False
+RATE = 16000
 
-def listen_for_best_speech_result(pyaudio, duration, profile, stt_type = "google"):
+def best_speech_result(pyaudio, audio_data, profile, stt_type = "google"):
+  wav_name = data_to_wav(pyaudio, audio_data)
+  if wav_name == "":
+    print("error saving data")
+    return ""
   if stt_type == 'google':
-    return listen_for_best_google_speech_result(pyaudio, duration, profile)
+    output = best_google_speech_result(pyaudio, wav_name, profile)
   elif stt_type == 'wit':
-    return listen_for_best_wit_speech_result(pyaudio, duration, profile)
+    output = best_wit_speech_result(pyaudio, wav_name, profile)
   elif stt_type == 'sphinx':
-    return listen_for_best_sphinx_speech_result(pyaudio, duration, profile)
+    output = best_sphinx_speech_result(pyaudio, wav_name, profile)
 
-def listen_for_best_sphinx_speech_result(pyaudio, duration, profile):
+  os.remove(wav_name)
+  return output
+
+def best_sphinx_speech_result(pyaudio, wav_name, profile):
   if not have_sphinx_dictionary:
     if not profile.has_key("words"):
       raise "Pass the possible words in in profile"
@@ -31,9 +40,6 @@ def listen_for_best_sphinx_speech_result(pyaudio, duration, profile):
     global have_sphinx_dictionary
     have_sphinx_dictionary = True
 
-  wav_name = record_wav(pyaudio, duration)
-  if wav_name == "":
-    return ""
   wav_file = file(wav_name, 'rb')
   speechRec = Decoder(
     hmm  = "/usr/local/share/pocketsphinx/model/hmm/en_US/hub4wsj_sc_8k",
@@ -43,76 +49,74 @@ def listen_for_best_sphinx_speech_result(pyaudio, duration, profile):
 
   speechRec.decode_raw(wav_file)
   results = speechRec.get_hyp()
-
-  os.remove(wav_name)
-
   return results[0]
 
-def listen_for_best_google_speech_result(pyaudio, duration, profile):
+def best_google_speech_result(pyaudio, wav_name, profile):
   if not profile.has_key("key") or profile["key"] == '':
-    raise "Pass your Google Developer Key in profile"
-  flac_file = wav_to_flac(record_wav(pyaudio, duration))
-  if flac_file == "":
-    return ""
+    profile["key"] = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
+  flac_file = wav_to_flac(wav_name)
   return best_google_result(flac_to_google_result(flac_file, profile["key"]))
 
-def listen_for_best_wit_speech_result(pyaudio, duration, profile):
+def best_wit_speech_result(pyaudio, wav_name, profile):
   if not profile.has_key("wit_token") or profile["wit_token"] == '':
     raise "Pass your Wit API Token in profile"
-  wav_name = record_wav(pyaudio, duration)
-  if wav_name == "":
-    return ""
   w = Wit(profile["wit_token"])
   result = w.post_speech(open(wav_name, 'rb'))
-  os.remove(wav_name)
   return result[u'msg_body']
 
-def record_wav(p, duration):
-  rate = 44100
-  cd, wav_name = mkstemp('tmp.wav')
+def put_audio_data_in_queue(p, queue):
+  CHUNK = 4096
 
-  stream = p.open(rate, 1, pyaudio.paInt16, input = True)
-  data = stream.read(rate * duration)
+  loud = False
+  current_data = ""
+
+  stream = p.open(input_device_index = None, rate = RATE, channels = 1,
+                  frames_per_buffer = CHUNK, format = pyaudio.paInt16,
+                  input = True)
+  while True:
+    data = stream.read(CHUNK)
+
+    # 2 bytes per paInt16
+    levels = struct.unpack("%dh"%(len(data)/2), data)
+
+    sum_squares = 0
+    for level in levels:
+        sum_squares += level * level
+
+    if (sum_squares / CHUNK > 1000000):
+      current_data = current_data + data
+      loud = True
+    else:
+      if (loud):
+        queue.put(current_data)
+        current_data = ""
+      loud = False
+
   stream.stop_stream()
   stream.close()
 
-  # 2 bytes per paInt16
-  format = "%dh"%(len(data)/2)
-  levels = struct.unpack(format, data)
-
-  sum_squares = 0
-  for level in levels:
-      sum_squares += level * level
-
-  if sum_squares / (rate * duration) < 4000000:
-    return ""
+def data_to_wav(p, audio_data):
+  cd, wav_name = mkstemp('tmp.wav')
 
   wav_file = wave.open(wav_name, 'wb')
   wav_file.setnchannels(1)
   wav_file.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-  wav_file.setframerate(rate)
-  wav_file.writeframes(data)
+  wav_file.setframerate(RATE)
+  wav_file.writeframes(audio_data)
   wav_file.close()
 
   return wav_name
 
 def wav_to_flac(wav_name):
-  if wav_name == "":
-    return ""
-
   cd, tmp_name = mkstemp('tmp.flac')
 
-  #Resampling to 16000fs
-  rate = 16000.
   Signal, fs = wavread(wav_name)[:2]
-  Signal = resample(Signal, rate / float(fs), 'sinc_best')
+  assert(fs == RATE)
 
   fmt = Format('flac', 'pcm16')
   nchannels = 1
-  flac_file = Sndfile(tmp_name, 'w', fmt, nchannels, rate)
+  flac_file = Sndfile(tmp_name, 'w', fmt, nchannels, RATE)
   flac_file.write_frames(Signal)
-
-  os.remove(wav_name)
 
   return tmp_name
 
@@ -136,6 +140,7 @@ def flac_to_google_result(flac_name, key):
 
 def best_google_result(result):
   if result == "":
+    print("No result")
     return ""
   try:
     lines = result.splitlines()
@@ -147,8 +152,11 @@ def best_google_result(result):
     return ""
 
 if __name__ == "__main__":
-  import yaml
-  profile = yaml.load(open("profile.yml", 'rb').read())
+  from thread import start_new_thread
   p = pyaudio.PyAudio()
-  print(listen_for_best_wit_speech_result(p, 4, profile))
-
+  audio_data_queue = Queue.Queue()
+  start_new_thread(put_audio_data_in_queue, (p, audio_data_queue,))
+  while True:
+    data = audio_data_queue.get()
+    print(len(data))
+    print(best_speech_result(p, data, {}, "google"))

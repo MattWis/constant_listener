@@ -16,6 +16,8 @@ Map 'key' to a valid Google Developer Key.
 Follow "Step 1" here: http://progfruits.wordpress.com/2014/05/31/using-google-speech-api-from-python/
 (Also, concerns raised in the article are valid.)
 
+If there is no key specified, a default key will be used, which was gotten from https://gist.github.com/alotaiba/1730160. There's a surprising amount of discussion on that page, some of it even useful.
+
   Sphinx:
 If you are using sphinx, you need profile to have "words" mapped to a list of possible outputs.
 
@@ -24,10 +26,11 @@ Map 'wit_token' to a valid wit.ai token. (I use a server token, it will *probabl
 
 Usage:
 
-To start a listener that triggers every one second and records for 4 seconds (using google STT):
+To start a listener that triggers every one second and records for 4 seconds (using google STT and default key):
 
-profile = { "key": "My_key_here" }
+```
 q = Queue.Queue()
-# Other options are "sphinx" and "wit"
-background_speech_to_text(q, 4, 1, profile, "google")
-
+background_speech_to_text(q, 4, 1, {}, "google")
+while True:
+  print q.get()
+```
