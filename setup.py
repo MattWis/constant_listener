@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(name='constant_listener',
-      version='0.0.3',
+      version='0.0.4',
       author='Matt Wismer',
       author_email='mattwis86@gmail.com',
       description='STT engine that listens in the background',
