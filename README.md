@@ -1,10 +1,6 @@
 Constant Listener
 
-This repository was created as a utility for a home automation system. It listens in the background, and uses Google's Speech-to-Text API to give the text said through a Queue.
-
-The general usage has it listening for overlapping chunks, so if you read the beginning of this README into the program, the Queue would have in it:
-["Constant Listener", "Listener This repository was created", "story was created as a Ute", ...]
-
+This repository was created as a utility for a home automation system. It listens in the background, and uses Speech-to-Text APIs to give the text said through a Queue. The background noise level is calibrated based on the past 30 seconds of data to enable dynamic power thresholding.
 
 Initilization:
 
@@ -19,12 +15,7 @@ Follow "Step 1" here: http://progfruits.wordpress.com/2014/05/31/using-google-sp
 If there is no key specified, a default key will be used, which was gotten from https://gist.github.com/alotaiba/1730160. There's a surprising amount of discussion on that page, some of it even useful.
 
   Sphinx:
-If you are using sphinx, you need profile to have "words" mapped to a list of possible outputs.
-
-  Wit.ai:
-Map 'wit_token' to a valid wit.ai token. (I use a server token, it might work with a client token.)
-
-It's worth noting that the way this currently uses [pywit](https://github.com/lextoumbourou/PyWit) is deprecated in favor of the [official API](https://github.com/wit-ai/pywit), which doesn't have the same structure.
+If you are using sphinx, you need profile to have "words" mapped to a list of possible outputs. There also may be some additional setup.
 
 Usage:
 ```

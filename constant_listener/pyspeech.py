@@ -12,8 +12,6 @@ from scikits.samplerate import resample
 from scikits.audiolab import Sndfile, Format, wavread
 from pocketsphinx import Decoder
 from vocabcompiler import compile
-from wit import Wit
-
 
 have_sphinx_dictionary = False
 RATE = 16000
@@ -26,8 +24,6 @@ def best_speech_result(pyaudio, audio_data, profile, stt_type = "google"):
     return ""
   if stt_type == 'google':
     output = best_google_speech_result(pyaudio, wav_name, profile)
-  elif stt_type == 'wit':
-    output = best_wit_speech_result(pyaudio, wav_name, profile)
   elif stt_type == 'sphinx':
     output = best_sphinx_speech_result(pyaudio, wav_name, profile)
 
@@ -58,13 +54,6 @@ def best_google_speech_result(pyaudio, wav_name, profile):
     profile["key"] = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
   flac_file = wav_to_flac(wav_name)
   return best_google_result(flac_to_google_result(flac_file, profile["key"]))
-
-def best_wit_speech_result(pyaudio, wav_name, profile):
-  if not profile.has_key("wit_token") or profile["wit_token"] == '':
-    raise "Pass your Wit API Token in profile"
-  w = Wit(profile["wit_token"])
-  result = w.post_speech(open(wav_name, 'rb'))
-  return result[u'msg_body']
 
 def put_audio_data_in_queue(p, queue):
   CHUNK = 4092 #Takes approximately 1/4 second at RATE = 16000
