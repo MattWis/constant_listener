@@ -9,10 +9,14 @@ Pick your STT engine and follow the instructions there. You pass in a profile ar
   Google:
 Map 'key' to a valid Google Developer Key.
 
-Follow "Step 1" here: http://progfruits.wordpress.com/2014/05/31/using-google-speech-api-from-python/
+Follow "Step 1" [here](http://progfruits.wordpress.com/2014/05/31/using-google-speech-api-from-python/)
 (Also, concerns raised in the article are valid.)
 
 If there is no key specified, a default key will be used, which was gotten from https://gist.github.com/alotaiba/1730160. There's a surprising amount of discussion on that page, some of it even useful.
+
+  AT&T:
+Map 'ATT_APP_ID' to your APP ID, and 'ATT_APP_SECRET' to your APP SECRET
+You can sign up for these things [here](https://developer.att.com/).
 
   Sphinx:
 If you are using sphinx, you need profile to have "words" mapped to a list of possible outputs. There also may be some additional setup.

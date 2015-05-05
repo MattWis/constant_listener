@@ -23,7 +23,7 @@ if __name__ == "__main__":
   import yaml
   profile = yaml.load(open("profile.yml").read())
   q = Queue.Queue()
-  background_stt(q, profile, 'google')
+  background_stt(q, profile, 'att')
 
   while True:
     print(q.get())

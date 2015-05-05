@@ -2,6 +2,7 @@
 sentences.txt
 language_model.lm
 dictionary.dic
+constant_listener/profile.yml
 build/
 *egg-info*
 dist/

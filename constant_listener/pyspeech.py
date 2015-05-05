@@ -5,8 +5,9 @@ import wave
 import pyaudio
 import Queue
 import struct
-from tempfile import mkstemp
 import urllib2
+import requests
+from tempfile import mkstemp
 from statistics import median
 from scikits.samplerate import resample
 from scikits.audiolab import Sndfile, Format, wavread
@@ -24,6 +25,8 @@ def best_speech_result(pyaudio, audio_data, profile, stt_type = "google"):
     return ""
   if stt_type == 'google':
     output = best_google_speech_result(pyaudio, wav_name, profile)
+  elif stt_type == 'att':
+    output = best_att_speech_result(pyaudio, wav_name, profile)
   elif stt_type == 'sphinx':
     output = best_sphinx_speech_result(pyaudio, wav_name, profile)
 
@@ -33,7 +36,7 @@ def best_speech_result(pyaudio, audio_data, profile, stt_type = "google"):
 def best_sphinx_speech_result(pyaudio, wav_name, profile):
   if not have_sphinx_dictionary:
     if not profile.has_key("words"):
-      raise "Pass the possible words in in profile"
+      raise(KeyError("Pass the possible words in in profile"))
     compile("sentences.txt", "dictionary.dic", "language_model.lm", profile["words"])
     global have_sphinx_dictionary
     have_sphinx_dictionary = True
@@ -54,6 +57,37 @@ def best_google_speech_result(pyaudio, wav_name, profile):
     profile["key"] = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
   flac_file = wav_to_flac(wav_name)
   return best_google_result(flac_to_google_result(flac_file, profile["key"]))
+
+def best_google_speech_result(pyaudio, wav_name, profile):
+  if not profile.has_key("key") or profile["key"] == '':
+    profile["key"] = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
+  flac_file = wav_to_flac(wav_name)
+  return best_google_result(flac_to_google_result(flac_file, profile["key"]))
+def best_att_speech_result(pyaudio, wav_name, profile):
+  if not profile.has_key("ATT_TOKEN"):
+    if not profile.has_key("ATT_APP_KEY") or profile["ATT_APP_KEY"] == "":
+      raise(KeyError("Pass in ATT_APP_KEY in profile"))
+    if not profile.has_key("ATT_APP_SECRET") or profile["ATT_APP_SECRET"] == "":
+      raise(KeyError("Pass in ATT_APP_SECRET in profile"))
+
+    # Get Access Token via OAuth.
+    # https://matrix.bf.sl.attcompute.com/apps/constellation-sandbox
+    response = requests.post("https://api.att.com/oauth/token", {
+        "client_id": profile["ATT_APP_KEY"],
+        "client_secret": profile["ATT_APP_SECRET"],
+        "grant_type": "client_credentials",
+        "scope": "SPEECH"
+    })
+    content = json.loads(response.content)
+    profile["ATT_TOKEN"] = content["access_token"]
+
+  response = requests.post("https://api.att.com/speech/v3/speechToText",
+          headers = {"Authorization": "Bearer %s" % profile["ATT_TOKEN"],
+                     "Accept": "application/json",
+                     "Content-Type": "audio/wav",
+                     "X-SpeechContext": "Generic",
+                    }, data = open(wav_name, 'rb'))
+  return json.loads(response.content)['Recognition']['NBest'][0]['ResultText']
 
 def put_audio_data_in_queue(p, queue):
   CHUNK = 4092 #Takes approximately 1/4 second at RATE = 16000
@@ -117,6 +151,19 @@ def wav_to_flac(wav_name):
 
   return tmp_name
 
+def best_google_result(result):
+  if result == "":
+    print("No result")
+    return ""
+  try:
+    lines = result.splitlines()
+    if "transcript" in lines[0] or len(lines[0]) > 15:
+      print("\nFirst line has info:\n" + lines[0] + '\n')
+    else:
+      return json.loads(lines[1])['result'][0]['alternative'][0]['transcript']
+  except:
+    return "Error"
+
 def flac_to_google_result(flac_name, key):
   if flac_name == "":
     return ""
@@ -134,19 +181,6 @@ def flac_to_google_result(flac_name, key):
   os.remove(flac_name)
 
   return result.read()
-
-def best_google_result(result):
-  if result == "":
-    print("No result")
-    return ""
-  try:
-    lines = result.splitlines()
-    if "transcript" in lines[0] or len(lines[0]) > 15:
-      print("\nFirst line has info:\n" + lines[0] + '\n')
-    else:
-      return json.loads(lines[1])['result'][0]['alternative'][0]['transcript']
-  except:
-    return ""
 
 if __name__ == "__main__":
   from thread import start_new_thread
