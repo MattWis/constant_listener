@@ -7,6 +7,7 @@ import Queue
 import struct
 from tempfile import mkstemp
 import urllib2
+from statistics import median
 from scikits.samplerate import resample
 from scikits.audiolab import Sndfile, Format, wavread
 from pocketsphinx import Decoder
@@ -16,6 +17,7 @@ from wit import Wit
 
 have_sphinx_dictionary = False
 RATE = 16000
+power_levels = []
 
 def best_speech_result(pyaudio, audio_data, profile, stt_type = "google"):
   wav_name = data_to_wav(pyaudio, audio_data)
@@ -65,7 +67,7 @@ def best_wit_speech_result(pyaudio, wav_name, profile):
   return result[u'msg_body']
 
 def put_audio_data_in_queue(p, queue):
-  CHUNK = 4096
+  CHUNK = 4092 #Takes approximately 1/4 second at RATE = 16000
 
   quiet_time = 0
   current_data = ""
@@ -82,8 +84,13 @@ def put_audio_data_in_queue(p, queue):
     sum_squares = 0
     for level in levels:
         sum_squares += level * level
+    power_levels.append(sum_squares / CHUNK)
 
-    if (sum_squares / CHUNK > 1000000):
+    # Average median power over last half minute
+    # With a factor of 10 to reject noise
+    thresh = median(power_levels[len(power_levels) - 20:]) * 10
+
+    if (sum_squares / CHUNK > thresh):
       current_data = current_data + data
       quiet_time = 0
     else:
